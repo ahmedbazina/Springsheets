@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.1/css/bootstrap.min.css"
+    />
+  </head>
+  <body>
+    <div class="tabs">
+      <ul>
+        <li class="tablinks is-active" style="font-size: 33px;font-family: fantasy;">
+          <a onclick="openTab(event, 'Stock')">
+            <span>Stock</span>
+          </a>
+        </li>
+        <li class="tablinks" style="font-size: 33px;font-family: fantasy;">
+          <a onclick="openTab(event, 'Faulty')">
+            <span>Faulty</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+    <div class="container">
+      <div class="tabcontent" id="Stock">
+        <p class="title" style="text-align: center; font-size: 20px;">
+          Add new parts 
+        </p>
+        <form>
+          <div style="padding: 10px">
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="supplier">Supplier</label>
+                <select
+                  id="supplier"
+                  class="form-control"
+                  onchange="loadModelOptions(this.value);"
+                ></select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="model">Model</label>
+                <select
+                  id="model"
+                  class="form-control"
+                  onchange="loadPartOptions(this.value, document.getElementById('supplier').value, 'part');"
+                ></select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="part">Part</label>
+                <select 
+                  id="part" 
+                  class="form-control"
+                ></select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="quantity">Quantity</label>
+                <input
+                  type="text"
+                  id="quantity"
+                  class="form-control"
+                />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <input
+                  type="button"
+                  value="Submit"
+                  onclick="submitRecord('supplier', 'model', 'part', 'quantity');"
+                  class="btn btn-primary"
+                  id="submitButton"
+                />
+              </div>
+            </div>
+          </div>
+          <div id="message" style="margin-top: 10px;"></div>
+        </form>
+      </div>
+    </div>
+    <div class="container">
+      <div class="tabcontent is-hidden" id="Faulty">
+        <p class="title" style="text-align: center; font-size: 20px;">
+          Add faulty parts 
+        </p>
+        <form>
+          <div style="padding: 10px">
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="fsupplier">Supplier</label>
+                <select
+                  id="fsupplier"
+                  class="form-control"
+                  onchange="loadFaultyModelOptions(this.value);"
+                ></select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="fmodel">Model</label>
+                <select
+                  id="fmodel"
+                  class="form-control"
+                  onchange="loadFaultyPartOptions(this.value, document.getElementById('fsupplier').value, 'fpart');"
+                ></select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="fpart">Part</label>
+                <select id="fpart" class="form-control"></select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="fquantity">Quantity</label>
+                <input
+                  type="text"
+                  id="fquantity"
+                  class="form-control"
+                />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <input
+                  type="button"
+                  value="Submit"
+                  onclick="submitFaultyRecord('fsupplier', 'fmodel', 'fpart', 'fquantity');"
+                  class="btn btn-primary"
+                  id="fsubmitButton"
+                />
+              </div>
+            </div>
+          </div>
+          <div id="fmessage" style="margin-top: 10px;"></div>
+        </form>
+      </div>
+    </div>
+  </body>
+  <script>
+    function openTab(event, tabTitle) {
+      let tabContent, tabLinks, target;
+      tabContent = document.getElementsByClassName("tabcontent");
+      for (let i = 0; i < tabContent.length; i++) {
+        tabContent[i].style.display = "none";
+        tabContent[i].className = tabContent[i].className.replace(" is-active", "");
+      }
+      tabLinks = document.getElementsByClassName("tablinks");
+      for (let i = 0; i < tabLinks.length; i++) {
+        tabLinks[i].className = tabLinks[i].className.replace(" is-active", "");
+      }
+
+      target = document.getElementById(tabTitle);
+      target.style.display = "block";
+      target.classList.remove("is-hidden");
+      target.className += " is-active";
+      event.currentTarget.parentElement.classList.add("is-active");
+    }
+
+
+    function loadSupplierOptions() {
+      google.script.run.withSuccessHandler(function(suppliers) {
+        console.log("Received suppliers:", suppliers);
+        var supplierDropdown = document.getElementById('supplier');
+        supplierDropdown.innerHTML = '<option value="" disabled selected>Select a Supplier</option>';
+        suppliers.forEach(function(supplier) {
+          supplierDropdown.innerHTML += '<option value="' + supplier + '">' + supplier + '</option>';
+        });
+
+        // Clear the "Model" and "Part" dropdowns when a supplier is selected.
+        document.getElementById('model').innerHTML = '<option value="" disabled selected>Select a Model</option>';
+        document.getElementById('part').innerHTML = '<option value="" disabled selected>Select a Part</option>';
+
+        // After loading suppliers, load models based on the selected supplier.
+        if (supplierDropdown.value) {
+          loadModelOptions(supplierDropdown.value);
+        }
+      }).getSupplierData();
+    }
+
+    function loadModelOptions(supplier) {
+      if (supplier) {
+        google.script.run.withSuccessHandler(function (models) {
+          console.log("Received models:", models);
+          var modelDropdown = document.getElementById("model");
+          modelDropdown.innerHTML = '<option value="" disabled selected>Select a Model</option>';
+          models.forEach(function (model) {
+            modelDropdown.innerHTML += '<option value="' + model + '">' + model + '</option>';
+          });
+        }).getModelData(supplier);
+      } else {
+        // If no supplier is selected, clear the models dropdown.
+        var modelDropdown = document.getElementById("model");
+        modelDropdown.innerHTML = '<option value="" disabled selected>Select a Model</option>';
+      }
+    }
+
+    function loadPartOptions(model, supplier, partDropdownId) {
+      var partDropdown = document.getElementById(partDropdownId);
+      // Store the current selected part, if any
+      var selectedPart = partDropdown.value;
+      if (model && supplier) {
+        google.script.run.withSuccessHandler(function (parts) {
+          console.log("Received parts:", parts);
+          partDropdown.innerHTML = '<option value="" disabled selected>Select a Part</option>';
+          parts.forEach(function (part) {
+            partDropdown.innerHTML += '<option value="' + part + '">' + part + '</option>';
+          });
+          // Set the previously selected part, if available
+          if (selectedPart) {
+            partDropdown.value = selectedPart;
+          }
+        }).getPartData(model, supplier);
+      } else {
+        // If no model or supplier is selected, do not clear the parts dropdown.
+        // This preserves the selected part if it's still valid.
+        partDropdown.innerHTML = '<option value="" disabled selected>Select a Part</option>';
+        // Set the previously selected part, if available
+        if (selectedPart) {
+          partDropdown.value = selectedPart;
+        }
+      }
+    }
+
+    // Handle the onchange event for the part dropdown
+    document.getElementById('part').onchange = function () {
+      var selectedModel = document.getElementById('model').value;
+      var selectedSupplier = document.getElementById('supplier').value;
+      loadPartOptions(selectedModel, selectedSupplier, 'part');
+    };
+
+
+    function submitRecord(supplierId, modelId, partId, quantityId) {
+      var supplier = document.getElementById(supplierId).value;
+      var model = document.getElementById(modelId).value;
+      var part = document.getElementById(partId).value;
+      var quantityInput = document.getElementById(quantityId);
+      var quantity = parseFloat(quantityInput.value);
+
+      // Check if supplier, model, and part are selected before making the server-side call
+      if (!supplier || !model || !part) {
+        // Display an error message or take appropriate action here
+        // For example, you can display an error message to inform the user to select all required fields.
+        document.getElementById('message').innerHTML = '<span style="color: red;">Please select Supplier, Model, and Part.</span>';
+        return; // Exit the function without making the server call
+      }
+
+      google.script.run
+        .withSuccessHandler(function (existingQuantity) {
+          if (typeof existingQuantity === 'number') {
+            quantity += existingQuantity;
+          }
+          quantityInput.value = quantity;
+
+          // Display "Record Updated" message
+          document.getElementById('message').innerHTML = '<span style="font-weight: bold">Record Updated</span>';
+
+          // Reset the form fields
+          document.getElementById(supplierId).value = ''; // Set to the initial value
+          document.getElementById(modelId).value = ''; // Set to the initial value
+          document.getElementById(partId).value = '';   // Set to the initial value
+          document.getElementById(quantityId).value = ''; // Set to an empty string
+        })
+        .submitRecord(supplier, model, part, quantity);
+    }
+
+
+    function loadFaultySupplierOptions() {
+      google.script.run.withSuccessHandler(function (suppliers) {
+        console.log("Received faulty suppliers:", suppliers);
+        var supplierDropdown = document.getElementById('fsupplier');
+        supplierDropdown.innerHTML = '<option value="" disabled selected>Select a Supplier</option>';
+        suppliers.forEach(function (supplier) {
+          supplierDropdown.innerHTML += '<option value="' + supplier + '">' + supplier + '</option>';
+        });
+
+        // Clear the "Faulty Model" and "Faulty Part" dropdowns when a supplier is selected.
+        document.getElementById('fmodel').innerHTML = '<option value="" disabled selected>Select a Model</option>';
+        document.getElementById('fpart').innerHTML = '<option value="" disabled selected>Select a Part</option>';
+
+        // After loading faulty suppliers, load faulty models based on the selected faulty supplier.
+        if (supplierDropdown.value) {
+          loadFaultyModelOptions(supplierDropdown.value);
+        }
+      }).getFaultySupplierData(); // Corrected function call
+    }
+
+
+    function loadFaultyModelOptions(supplier) {
+      if (supplier) {
+        google.script.run.withSuccessHandler(function (models) {
+          console.log("Received faulty models:", models);
+          var modelDropdown = document.getElementById("fmodel");
+          modelDropdown.innerHTML = '<option value="" disabled selected>Select a Model</option>';
+          models.forEach(function (model) {
+            modelDropdown.innerHTML += '<option value="' + model + '">' + model + '</option>';
+          });
+        }).getModelData(supplier);
+      } else {
+        // If no supplier is selected, clear the faulty models dropdown.
+        var modelDropdown = document.getElementById("fmodel");
+        modelDropdown.innerHTML = '<option value="" disabled selected>Select a Model</option>';
+      }
+    }
+
+    function loadFaultyPartOptions(model, supplier, partDropdownId) {
+      var partDropdown = document.getElementById(partDropdownId);
+      // Store the current selected part, if any
+      var selectedPart = partDropdown.value;
+      if (model && supplier) {
+        google.script.run.withSuccessHandler(function (parts) {
+          console.log("Received faulty parts:", parts);
+          partDropdown.innerHTML = '<option value="" disabled selected>Select a Part</option>';
+          parts.forEach(function (part) {
+            partDropdown.innerHTML += '<option value="' + part + '">' + part + '</option>';
+          });
+          // Set the previously selected part, if available
+          if (selectedPart) {
+            partDropdown.value = selectedPart;
+          }
+        }).getPartData(model, supplier);
+      } else {
+        // If no model or supplier is selected, do not clear the faulty parts dropdown.
+        // This preserves the selected part if it's still valid.
+        partDropdown.innerHTML = '<option value="" disabled selected>Select a Part</option>';
+        // Set the previously selected part, if available
+        if (selectedPart) {
+          partDropdown.value = selectedPart;
+        }
+      }
+    }
+
+    // Handle the onchange event for the faulty part dropdown
+    document.getElementById('fpart').onchange = function () {
+      var selectedModel = document.getElementById('fmodel').value;
+      var selectedSupplier = document.getElementById('fsupplier').value;
+      loadFaultyPartOptions(selectedModel, selectedSupplier, 'fpart');
+    };
+
+    function submitFaultyRecord(fsupplierId, fmodelId, fpartId, fquantityId) {
+      var fsupplier = document.getElementById(fsupplierId).value;
+      var fmodel = document.getElementById(fmodelId).value;
+      var fpart = document.getElementById(fpartId).value;
+      var fquantityInput = document.getElementById(fquantityId);
+      var fquantity = parseFloat(fquantityInput.value);
+
+      google.script.run
+        .withSuccessHandler(function (existingQuantity) {
+          if (typeof existingQuantity === 'number') {
+            fquantity += existingQuantity;
+          }
+          fquantityInput.value = fquantity;
+
+          // Display "Record Updated" message
+          document.getElementById('fmessage').innerHTML = '<span style="font-weight: bold">Record Updated</span>';
+
+          // Reset the form fields
+          document.getElementById(fsupplierId).value = ''; // Set to the initial value
+          document.getElementById(fmodelId).value = ''; // Set to the initial value
+          document.getElementById(fpartId).value = '';   // Set to the initial value
+          document.getElementById(fquantityId).value = ''; // Set to an empty string
+        })
+        .submitFaultyRecord(fsupplier, fmodel, fpart, fquantity);
+    }
+
+
+    // Function to load suppliers when the page loads
+    function loadInitialData() {
+      loadSupplierOptions();
+    }
+
+    // Call loadInitialData when the page loads
+    window.onload = function () {
+      loadInitialData();
+      loadFaultySupplierOptions();
+    };
+  </script>
+</html>
